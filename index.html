@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino Runner Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f7f7f7;
+            font-family: Arial, sans-serif;
+            flex-direction: column;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 250px;
+            background-color: #ffffff;
+            border-bottom: 2px solid #535353;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #dino {
+            position: absolute;
+            width: 40px;
+            height: 43px;
+            background-color: #535353;
+            bottom: 0px;
+            left: 50px;
+            border-radius: 4px;
+        }
+
+        .cactus {
+            position: absolute;
+            width: 20px;
+            height: 45px;
+            background-color: #27ae60;
+            bottom: 0px;
+            left: 800px;
+        }
+
+        #score-board {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #535353;
+        }
+
+        #game-over-screen {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #535353;
+        }
+
+        #game-over-screen h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        #game-over-screen p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="score-board">Điểm: <span id="score">0</span></div>
+        <div id="dino"></div>
+        <div id="game-over-screen">
+            <h1>GAME OVER</h1>
+            <p>Nhấn Space hoặc Click để chơi lại</p>
+        </div>
+    </div>
+
+    <script>
+        const dino = document.getElementById("dino");
+        const container = document.getElementById("game-container");
+        const scoreElement = document.getElementById("score");
+        const gameOverScreen = document.getElementById("game-over-screen");
+
+        let isJumping = false;
+        let isGameOver = false;
+        let score = 0;
+        let gameSpeed = 5;
+        let dinoBottom = 0;
+        let gravity = 0.6;
+        let jumpVelocity = 0;
+
+        // Xử lý sự kiện bấm phím hoặc click
+        document.addEventListener("keydown", function (e) {
+            if (e.code === "Space" || e.code === "ArrowUp") {
+                if (isGameOver) {
+                    resetGame();
+                } else if (!isJumping) {
+jump();
+                }
+            }
+        });
+
+        document.addEventListener("click", function () {
+            if (isGameOver) {
+                resetGame();
+            } else if (!isJumping) {
+                jump();
+            }
+        });
+
+        function jump() {
+            isJumping = true;
+            jumpVelocity = 12;
+        }
+
+        function createCactus() {
+            if (isGameOver) return;
+
+            const cactus = document.createElement("div");
+            cactus.classList.add("cactus");
+            container.appendChild(cactus);
+
+            let cactusLeft = 800;
+
+            function moveCactus() {
+                if (isGameOver) {
+                    cactus.remove();
+                    return;
+                }
+
+                cactusLeft -= gameSpeed;
+                cactus.style.left = cactusLeft + "px";
+
+                // Kiếm tra va chạm
+                if (
+                    cactusLeft > 50 &&
+                    cactusLeft < 90 &&
+                    dinoBottom < 45
+                ) {
+                    endGame();
+                    return;
+                }
+
+                if (cactusLeft < -20) {
+                    cactus.remove();
+                    score += 10;
+                    scoreElement.innerText = score;
+
+                    // Tăng tốc độ game theo thời gian
+                    if (score % 50 === 0) {
+                        gameSpeed += 0.5;
+                    }
+                } else {
+                    requestAnimationFrame(moveCactus);
+                }
+            }
+
+            requestAnimationFrame(moveCactus);
+
+            // Tạo cây tiếp theo ngẫu nhiên từ 1.2s đến 2.5s
+            let randomTime = Math.random() * 1300 + 1200;
+            setTimeout(createCactus, randomTime);
+        }
+
+        function gameLoop() {
+            if (isGameOver) return;
+
+            // Xử lý trọng lực cho khủng long
+            if (isJumping || dinoBottom > 0) {
+                dinoBottom += jumpVelocity;
+                jumpVelocity -= gravity;
+
+                if (dinoBottom <= 0) {
+                    dinoBottom = 0;
+                    isJumping = false;
+                }
+                dino.style.bottom = dinoBottom + "px";
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            isGameOver = true;
+            gameOverScreen.style.display = "block";
+        }
+
+        function resetGame() {
+            isGameOver = false;
+            score = 0;
+            gameSpeed = 5;
+            dinoBottom = 0;
+            dino.style.bottom = "0px";
+            scoreElement.innerText = score;
+            gameOverScreen.style.display = "none";
+            
+            // Xóa tất cả xương rồng cũ
+            document.querySelectorAll(".cactus").forEach(c => c.remove());
+
+            gameLoop();
+            createCactus();
+        }
+
+        // Bắt đầu game
+gameLoop();
+        createCactus();
+    </script>
+</body>
+</html>
